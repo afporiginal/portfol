@@ -15,6 +15,12 @@ create table if not exists public.site_content (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.site_config (
+  id text primary key check (id = 'portfolio'),
+  content jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.hidden_projects (
   repo_id bigint primary key,
   repo_name text not null,
@@ -22,10 +28,15 @@ create table if not exists public.hidden_projects (
 );
 
 alter table public.site_content enable row level security;
+alter table public.site_config enable row level security;
 alter table public.hidden_projects enable row level security;
+
+revoke all on table public.site_content, public.site_config, public.hidden_projects from public;
 
 grant select on public.site_content to anon, authenticated;
 grant insert, update, delete on public.site_content to authenticated;
+grant select on public.site_config to anon, authenticated;
+grant insert, update, delete on public.site_config to authenticated;
 grant select on public.hidden_projects to anon, authenticated;
 grant insert, update, delete on public.hidden_projects to authenticated;
 
@@ -39,6 +50,17 @@ create policy "Admin can manage site content"
   on public.site_content for all to authenticated
   using ((auth.jwt() ->> 'email') = 'arthurluz.principal@gmail.com')
   with check ((auth.jwt() ->> 'email') = 'arthurluz.principal@gmail.com');
+
+drop policy if exists "Public can read site config" on public.site_config;
+create policy "Public can read site config"
+  on public.site_config for select to anon, authenticated
+  using (id = 'portfolio');
+
+drop policy if exists "Admin can manage site config" on public.site_config;
+create policy "Admin can manage site config"
+  on public.site_config for all to authenticated
+  using ((auth.jwt() ->> 'email') = 'arthurluz.principal@gmail.com')
+  with check ((auth.jwt() ->> 'email') = 'arthurluz.principal@gmail.com' and id = 'portfolio');
 
 drop policy if exists "Public can read hidden project ids" on public.hidden_projects;
 create policy "Public can read hidden project ids"

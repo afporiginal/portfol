@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { Scene3DCanvas, ScrollToTopRewind } from "./Scene3D";
 import AdminPage from "./AdminPage";
-import { DEFAULT_CONTENT, fetchGitHubRepositories, readHiddenProjectIds, readPublicContent, type GitHubRepository, type SiteContent } from "./cms";
+import { DEFAULT_CONTENT, fetchGitHubRepositories, readHiddenProjectIds, readPublicContent, safeExternalUrl, type ContentCard, type GitHubRepository, type SiteContent } from "./cms";
 
 /* ───────────────────── THEME SYSTEM (CYBER HOLOGRAPHIC) ───────────────────── */
 type Theme = "dark" | "light";
@@ -95,20 +95,6 @@ const TECHS = [
   { name: "Blender", icon: "🎨", color: "#F5792A" },
   { name: "Git", icon: "📦", color: "#F05032" },
   { name: "VS Code", icon: "💎", color: "#007ACC" },
-];
-
-const WHAT_I_DO = [
-  { icon: "🧩", title: "Resolver problemas", desc: "Gosto de descobrir como as coisas funcionam e testar soluções." },
-  { icon: "🌐", title: "Brincar com a web", desc: "Transformar ideias em páginas e pequenas interações." },
-  { icon: "🎨", title: "Misturar código e visual", desc: "A parte criativa também faz parte de programar." },
-  { icon: "✨", title: "Criar por diversão", desc: "Nem toda ideia precisa virar um projeto enorme." },
-];
-
-const WHAT_I_USE = [
-  { icon: "💻", title: "VS Code", desc: "My daily driver for all coding." },
-  { icon: "📦", title: "Git & GitHub", desc: "Version control for everything." },
-  { icon: "🟢", title: "Node.js", desc: "Backend runtime for JS/TS projects." },
-  { icon: "🎨", title: "Blender", desc: "3D modeling, sculpting, rendering." },
 ];
 
 /* ───────────────────── HOOKS ───────────────────── */
@@ -331,16 +317,15 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
 }
 
 /* ───────────────────── NAVBAR ───────────────────── */
-const NAV_ITEMS = [
-  { label: "Início", id: "home" },
-  { label: "Sobre", id: "about" },
-  { label: "Projetos", id: "projects" },
-  { label: "Tecnologias", id: "tech" },
-  { label: "Contato", id: "contact" },
-];
-
 function Navbar() {
   const { T } = useT();
+  const content = useContent();
+  const navItems = [
+    { label: content.navHome, id: "home", visible: true },
+    { label: content.navAbout, id: "about", visible: content.showAbout },
+    { label: content.navProjects, id: "projects", visible: content.showProjects },
+    { label: content.navContact, id: "contact", visible: content.showContact },
+  ].filter((item) => item.visible);
   const [active, setActive] = useState("home");
   const [scrolled, setScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -356,9 +341,9 @@ function Navbar() {
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 40);
-      for (const item of [...NAV_ITEMS].reverse()) {
-        const el = document.getElementById(item.id);
-        if (el && el.getBoundingClientRect().top <= 120) { setActive(item.id); break; }
+      for (const id of ["contact", "projects", "about", "home"]) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= 120) { setActive(id); break; }
       }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -369,12 +354,12 @@ function Navbar() {
     <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, padding: scrolled ? "10px 16px" : "14px 16px", background: scrolled ? T.navBg : "transparent", backdropFilter: scrolled ? "blur(16px)" : "none", borderBottom: scrolled ? `1px solid ${T.border}` : "1px solid transparent", transition: "padding 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease", boxShadow: scrolled ? `0 2px 12px ${T.shadow}` : "none" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         {/* Logo */}
-        <a href="#home" data-gradient-text="" style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1.3rem", background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, textDecoration: "none", flexShrink: 0 }}>AFPL</a>
+        <a href="#home" data-gradient-text="" style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1.3rem", background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, textDecoration: "none", flexShrink: 0 }}>{content.brandName}</a>
 
         {/* Desktop links */}
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <a key={item.id} href={`#${item.id}`} onClick={() => setActive(item.id)}
                 style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", fontWeight: 500, padding: "6px 14px", borderRadius: "8px", color: active === item.id ? T.rosa : T.muted, background: active === item.id ? `${T.rosa}15` : "transparent", textDecoration: "none", transition: "all 0.3s ease", letterSpacing: "0.05em" }}
                 onMouseEnter={(e) => { if (active !== item.id) { e.currentTarget.style.color = T.text; e.currentTarget.style.background = `${T.rosa}10`; } }}
@@ -415,7 +400,7 @@ function Navbar() {
           opacity: menuOpen ? 1 : 0,
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", paddingTop: "12px" }}>
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <a key={item.id} href={`#${item.id}`}
                 onClick={() => { setActive(item.id); setMenuOpen(false); }}
                 style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", fontWeight: 500, padding: "10px 12px", borderRadius: "10px", color: active === item.id ? T.rosa : T.muted, background: active === item.id ? `${T.rosa}15` : "transparent", textDecoration: "none", transition: "all 0.2s ease" }}
@@ -489,19 +474,19 @@ function SectionGlow({ color, side }: { color: string; side: "left" | "right" })
 function HeroSection() {
   const { T, theme } = useT();
   const content = useContent();
-  const heroImg = theme === "dark" ? IMGS.marinHeroDark : IMGS.marinHeroLight;
+  const heroImg = safeExternalUrl(theme === "dark" ? content.heroDarkImageUrl : content.heroLightImageUrl, IMGS.marinHeroDark);
 
   return (
     <Section id="home" style={{ paddingTop: "120px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "3rem", flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 400px", minWidth: "280px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1rem" }}>
-            <img src={IMGS.marinAvatar} alt="Avatar" style={{ width: "48px", height: "48px", borderRadius: "50%", border: `2px solid ${T.rosa}` }} />
+            <img src={safeExternalUrl(content.heroAvatarUrl, IMGS.marinAvatar)} alt={content.heroName} style={{ width: "48px", height: "48px", borderRadius: "50%", border: `2px solid ${T.rosa}` }} />
             <div>
               <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: T.muted }}>
-                <span style={{ animation: "wave-hand 2.5s infinite", display: "inline-block", transformOrigin: "70% 70%" }}>👋</span> Oi, eu sou
+                <span style={{ animation: "wave-hand 2.5s infinite", display: "inline-block", transformOrigin: "70% 70%" }}>👋</span> {content.heroEyebrow}
               </p>
-              <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: "1.1rem", color: T.text }}>AFPL</p>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: "1.1rem", color: T.text }}>{content.heroName}</p>
             </div>
           </div>
 
@@ -515,16 +500,16 @@ function HeroSection() {
           </p>
 
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <a href="#projects"
+            <a href={content.showProjects ? "#projects" : safeExternalUrl(content.githubUrl, GITHUB)} target={content.showProjects ? undefined : "_blank"} rel={content.showProjects ? undefined : "noopener noreferrer"}
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 22px", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", fontWeight: 600, color: "#fff", background: T.rosa, borderRadius: "10px", textDecoration: "none", transition: "all 0.3s ease", boxShadow: `0 2px 10px ${T.rosa}33` }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 20px ${T.rosa}44`; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 2px 10px ${T.rosa}33`; }}
-            >Ver meus projetos ↓</a>
-            <a href={GITHUB} target="_blank" rel="noopener noreferrer"
+            >{content.heroPrimaryLabel}</a>
+            <a href={safeExternalUrl(content.githubUrl, GITHUB)} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 22px", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", fontWeight: 600, color: T.text, background: "transparent", border: `1px solid ${T.border}`, borderRadius: "10px", textDecoration: "none", transition: "all 0.3s ease" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.rosa; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "translateY(0)"; }}
-            >Meu GitHub ↗</a>
+            >{content.heroSecondaryLabel}</a>
           </div>
         </div>
 
@@ -533,11 +518,11 @@ function HeroSection() {
           <div style={{ position: "relative", width: "100%", maxWidth: "340px", borderRadius: "24px", overflow: "hidden", border: `1px solid ${T.border}`, background: `linear-gradient(180deg, ${T.card} 0%, ${T.bg} 100%)`, boxShadow: `0 8px 40px ${T.rosa}15, 0 0 80px ${T.rosa}08`, transition: "all 0.5s ease" }}>
             <div style={{ height: "4px", background: `linear-gradient(90deg, ${T.rosa}, ${T.gold}, ${T.rosa})`, backgroundSize: "200% auto", animation: "shimmer 3s linear infinite" }} />
             <div style={{ position: "relative" }}>
-              <img src={heroImg} alt="Marin Kitagawa" style={{ width: "100%", display: "block", pointerEvents: "none" }} />
+              <img src={heroImg} alt={content.heroImageAlt} style={{ width: "100%", display: "block", pointerEvents: "none" }} />
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: `linear-gradient(to top, ${T.bg} 0%, ${T.bg}cc 25%, transparent 100%)`, pointerEvents: "none", transition: "background 0.5s ease" }} />
               <div style={{ position: "absolute", bottom: "16px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "8px", padding: "6px 16px", borderRadius: "12px", background: `${T.card}cc`, backdropFilter: "blur(10px)", border: `1px solid ${T.border}` }}>
                 <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: T.rosa, boxShadow: `0 0 6px ${T.rosa}` }} />
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: T.muted, whiteSpace: "nowrap" }}>Marin Kitagawa ✿</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: T.muted, whiteSpace: "nowrap" }}>{content.heroImageCaption}</span>
               </div>
             </div>
           </div>
@@ -550,6 +535,7 @@ function HeroSection() {
 /* ───────────────────── QUOTE BANNER ───────────────────── */
 function QuoteBanner() {
   const { T, theme } = useT();
+  const content = useContent();
   const { ref, visible } = useInView(0.2);
   const isLight = theme === "light";
   return (
@@ -563,12 +549,12 @@ function QuoteBanner() {
 
       <div style={{ maxWidth: "700px", margin: "0 auto", position: "relative", zIndex: 1, opacity: visible ? 1 : 0, transform: visible ? "translateY(0) scale(1)" : "translateY(30px) scale(0.97)", transition: "all 1s cubic-bezier(0.16,1,0.3,1)" }}>
         <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "clamp(1.4rem, 3.5vw, 2.2rem)", fontWeight: 700, color: T.text, lineHeight: 1.5, marginBottom: "1.2rem", letterSpacing: "-0.01em" }}>
-          Não precisa ser um grande projeto —{" "}
-          <span data-gradient-text="" style={{ background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, display: "inline" }}>curiosidade também cria coisas legais.</span>
+          {content.quoteLead}{" "}
+          <span data-gradient-text="" style={{ background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, display: "inline" }}>{content.quoteHighlight}</span>
         </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
           <div style={{ width: "24px", height: "1px", background: `${T.rosa}44` }} />
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: T.muted, letterSpacing: "0.1em" }}>AFPL · portfólio pessoal</p>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: T.muted, letterSpacing: "0.1em" }}>{content.quoteSignature}</p>
           <div style={{ width: "24px", height: "1px", background: `${T.rosa}44` }} />
         </div>
       </div>
@@ -656,23 +642,6 @@ function JourneyItem({ item, index, T, isLight }: { item: typeof JOURNEY[number]
   );
 }
 
-/* ───────────────────── TECH MARQUEE ───────────────────── */
-function TechMarquee() {
-  const { T } = useT();
-  const items = [...TECHS, ...TECHS];
-  return (
-    <div style={{ overflow: "hidden", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "16px 0", background: `${T.card}80`, transition: "all 0.5s ease" }}>
-      <div style={{ display: "flex", width: "max-content", animation: "marquee 25s linear infinite" }}>
-        {items.map((t, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 28px", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", color: T.muted, whiteSpace: "nowrap" }}>
-            <span style={{ fontSize: "1.2rem" }}>{t.icon}</span>{t.name}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ───────────────────── ABOUT ───────────────────── */
 function AboutSection() {
   const { T } = useT();
@@ -684,10 +653,10 @@ function AboutSection() {
       <AnimatedCard delay={0} style={{ padding: "2rem", marginBottom: "2rem" }}>
         <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-            <img src={IMGS.marinPeace} alt="Marin peace" style={{ width: "clamp(100px, 15vw, 140px)", borderRadius: "16px", filter: `drop-shadow(0 0 20px ${T.rosa}33)`, animation: "floatSlow 6s ease-in-out infinite" }} />
+            <img src={safeExternalUrl(content.aboutImageUrl, IMGS.marinPeace)} alt={content.aboutImageAlt} style={{ width: "clamp(100px, 15vw, 140px)", borderRadius: "16px", filter: `drop-shadow(0 0 20px ${T.rosa}33)`, animation: "floatSlow 6s ease-in-out infinite" }} />
             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "12px", background: `${T.rosa}15`, border: `1px solid ${T.rosa}33` }}>
               <span style={{ fontSize: "0.7rem" }}>🇧🇷</span>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: T.rosa }}>Brazil</span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: T.rosa }}>{content.aboutCountry}</span>
             </div>
           </div>
           <div style={{ flex: "1 1 300px" }}>
@@ -701,7 +670,7 @@ function AboutSection() {
               {content.aboutParagraphTwo}
             </p>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {["Curiosidade", "Programação", "Web", "Experimentos"].map((tag) => (
+              {content.aboutTags.map((tag) => (
                 <span key={tag} style={{ padding: "4px 10px", borderRadius: "8px", background: `${T.rosa}12`, border: `1px solid ${T.rosa}22`, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: T.rosa }}>{tag}</span>
               ))}
             </div>
@@ -711,32 +680,12 @@ function AboutSection() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <h3 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: "1.2rem", color: T.text, display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.3rem" }}>⚡</span> O que me interessa</h3>
-          {WHAT_I_DO.map((item, i) => (
-            <AnimatedCard key={i} delay={i * 0.1} style={{ padding: "16px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: `${T.rosa}12`, border: `1px solid ${T.rosa}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem", flexShrink: 0 }}>{item.icon}</div>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: "0.95rem", color: T.text }}>{item.title}</p>
-                  <p style={{ fontSize: "0.8rem", color: T.muted, lineHeight: 1.5, marginTop: "2px" }}>{item.desc}</p>
-                </div>
-              </div>
-            </AnimatedCard>
-          ))}
+          <h3 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: "1.2rem", color: T.text, display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.3rem" }}>⚡</span> {content.aboutInterestsTitle}</h3>
+          {content.aboutInterests.map((item, i) => <AboutDetailCard key={`${item.title}-${i}`} item={item} index={i} tone="pink" />)}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <h3 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: "1.2rem", color: T.text, display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.3rem" }}>🛠️</span> Ferramentas que já explorei</h3>
-          {WHAT_I_USE.map((item, i) => (
-            <AnimatedCard key={i} delay={i * 0.1} style={{ padding: "16px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: `${T.gold}12`, border: `1px solid ${T.gold}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem", flexShrink: 0 }}>{item.icon}</div>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: "0.95rem", color: T.text }}>{item.title}</p>
-                  <p style={{ fontSize: "0.8rem", color: T.muted, lineHeight: 1.5, marginTop: "2px" }}>{item.desc}</p>
-                </div>
-              </div>
-            </AnimatedCard>
-          ))}
+          <h3 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: "1.2rem", color: T.text, display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.3rem" }}>🛠️</span> {content.aboutToolsTitle}</h3>
+          {content.aboutTools.map((item, i) => <AboutDetailCard key={`${item.title}-${i}`} item={item} index={i} tone="blue" />)}
         </div>
       </div>
     </Section>
@@ -744,30 +693,32 @@ function AboutSection() {
 }
 
 /* ───────────────────── TECH SECTION ───────────────────── */
-function TechSection() {
-  const { T } = useT();
-  return (
-    <Section id="tech" style={{ position: "relative", overflow: "hidden" }}>
-      <SectionGlow color={T.gold} side="right" />
-      <SectionTitle>Tecnologias que já explorei</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "1rem" }}>
-        {TECHS.map((tech, i) => <TechCard key={tech.name} tech={tech} delay={i * 0.08} />)}
-      </div>
-    </Section>
-  );
-}
-
-function TechCard({ tech, delay }: { tech: (typeof TECHS)[number]; delay: number }) {
+function AboutDetailCard({ item, index, tone }: { item: ContentCard; index: number; tone: "pink" | "blue" }) {
   const { T, theme } = useT();
-  const { ref, visible } = useInView(0.1);
-  const [hovered, setHovered] = useState(false);
-  const isLight = theme === "light";
+  const content = useContent();
+  const [expanded, setExpanded] = useState(false);
+  const accent = tone === "pink" ? T.rosa : T.gold;
+
   return (
-    <div ref={ref} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ background: T.card, border: `1px solid ${hovered ? tech.color + "66" : T.border}`, borderRadius: "14px", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", cursor: "default", transition: "all 0.3s ease", opacity: visible ? 1 : 0, transform: visible ? (hovered ? "translateY(-6px) scale(1.03)" : "translateY(0) scale(1)") : "translateY(20px)", transitionDelay: `${delay}s`, boxShadow: hovered ? (isLight ? `0 8px 25px ${T.shadow}, 0 0 0 1px ${tech.color}22` : `0 8px 25px ${tech.color}25`) : (isLight ? `0 1px 4px ${T.shadow}` : "none") }}>
-      <span style={{ fontSize: "2rem" }}>{tech.icon}</span>
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", fontWeight: 600, color: hovered ? tech.color : T.text, transition: "color 0.3s ease" }}>{tech.name}</span>
-    </div>
+    <button
+      type="button"
+      aria-expanded={expanded}
+      onClick={() => setExpanded((current) => !current)}
+      style={{
+        display: "flex", width: "100%", minHeight: "112px", alignItems: "flex-start", gap: "14px", padding: "16px 18px",
+        textAlign: "left", color: T.text, background: T.card, border: `1px solid ${expanded ? `${accent}88` : T.border}`,
+        borderRadius: "12px", cursor: "pointer", transition: "transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease",
+        boxShadow: expanded ? `0 8px 24px ${accent}18` : theme === "light" ? `0 1px 4px ${T.shadow}` : "none",
+        animation: `fadeInUp 0.5s ease ${index * 0.06}s both`,
+      }}
+    >
+      <span style={{ width: "42px", height: "42px", display: "grid", placeItems: "center", borderRadius: "10px", flexShrink: 0, background: `${accent}12`, border: `1px solid ${accent}22`, fontSize: "1.25rem" }}>{item.icon}</span>
+      <span style={{ display: "grid", gap: "4px", minWidth: 0 }}>
+        <strong style={{ fontSize: "0.94rem" }}>{item.title}</strong>
+        <span style={{ color: T.muted, fontSize: "0.8rem", lineHeight: 1.55 }}>{expanded ? item.detail : item.description}</span>
+        <span style={{ color: accent, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.64rem", marginTop: "3px" }}>{expanded ? content.aboutCardCloseHint : content.aboutCardOpenHint}</span>
+      </span>
+    </button>
   );
 }
 
@@ -918,7 +869,7 @@ function ProjectsSection() {
     return () => controller.abort();
   }, []);
 
-  const visibleRepositories = repositories ?? [];
+  const visibleRepositories = repositories?.slice(0, content.projectsLimit) ?? [];
 
   return (
     <Section id="projects">
@@ -932,25 +883,31 @@ function ProjectsSection() {
         style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: "1rem" }}
       >
         {repositories === null && !hasError && (
-          <p style={{ color: T.muted, gridColumn: "1 / -1", padding: "1.5rem 0" }}>Buscando os projetos mais recentes…</p>
+          <p style={{ color: T.muted, gridColumn: "1 / -1", padding: "1.5rem 0" }}>{content.projectsLoadingMessage}</p>
         )}
         {hasError && (
           <div style={{ color: T.muted, gridColumn: "1 / -1", padding: "1.5rem 0" }}>
-            Não consegui carregar os repositórios agora. Você ainda pode visitar meu perfil no GitHub.
+            {content.projectsErrorMessage}
           </div>
         )}
         {repositories !== null && visibleRepositories.length === 0 && (
           <div style={{ color: T.muted, gridColumn: "1 / -1", padding: "1.5rem 0" }}>
-            Ainda não há repositórios próprios públicos para mostrar. Quando pintar um experimento novo, ele aparece aqui.
+            {content.projectsEmptyMessage}
           </div>
         )}
-        {visibleRepositories.map((repo, index) => (
-          <a
-            key={repo.id}
-            href={repo.html_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
+        {visibleRepositories.map((repo, index) => {
+          const override = content.projectOverrides[String(repo.id)] ?? content.projectOverrides[repo.name];
+          const title = override?.title.trim() || repo.name;
+          const description = override?.description.trim() || repo.description || "Um experimento sem descrição. Abra o repositório para ver os detalhes.";
+          const url = safeExternalUrl(override?.url.trim() || repo.html_url, repo.html_url);
+          const language = override?.language.trim() || repo.language || "Sem linguagem definida";
+          return (
+            <a
+              key={repo.id}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
               display: "flex",
               flexDirection: "column",
               minHeight: "210px",
@@ -964,34 +921,31 @@ function ProjectsSection() {
               transform: visible ? "translateY(0)" : "translateY(18px)",
               transition: `opacity 0.5s ease ${index * 0.08}s, transform 0.5s ease ${index * 0.08}s, border-color 0.2s ease`,
               boxShadow: isLight ? `0 4px 18px ${T.shadow}` : "none",
-            }}
-            onMouseEnter={(event) => { event.currentTarget.style.borderColor = `${T.rosa}88`; }}
-            onMouseLeave={(event) => { event.currentTarget.style.borderColor = T.border; }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "1rem" }}>
-              <span style={{ fontSize: "1.3rem" }}>📦</span>
-              <span style={{ color: T.rosa, fontSize: "0.8rem" }}>Abrir no GitHub ↗</span>
-            </div>
-            <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.05rem", marginBottom: "0.5rem", overflowWrap: "anywhere" }}>{repo.name}</h3>
-            <p style={{ fontFamily: "'Inter', sans-serif", color: T.muted, fontSize: "0.85rem", lineHeight: 1.6, flex: 1 }}>
-              {repo.description || "Um experimento sem descrição — abra o repositório para ver os detalhes."}
-            </p>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", marginTop: "1rem", color: T.muted, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}>
-              <span>{repo.language || "Sem linguagem definida"}</span>
-              <span aria-label={`${repo.stargazers_count} estrelas e ${repo.forks_count} forks`}>
-                ★ {repo.stargazers_count} · Forks {repo.forks_count}
-              </span>
-            </div>
-          </a>
-        ))}
+              }}
+              onMouseEnter={(event) => { event.currentTarget.style.borderColor = `${T.rosa}88`; event.currentTarget.style.transform = "translateY(-3px)"; }}
+              onMouseLeave={(event) => { event.currentTarget.style.borderColor = T.border; event.currentTarget.style.transform = visible ? "translateY(0)" : "translateY(18px)"; }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "1rem" }}>
+                <span style={{ fontSize: "1.3rem" }}>📦</span>
+                <span style={{ color: T.rosa, fontSize: "0.8rem" }}>{override?.cta.trim() || content.projectCardCta}</span>
+              </div>
+              <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.05rem", marginBottom: "0.5rem", overflowWrap: "anywhere" }}>{title}</h3>
+              <p style={{ fontFamily: "'Inter', sans-serif", color: T.muted, fontSize: "0.85rem", lineHeight: 1.6, flex: 1 }}>{description}</p>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", marginTop: "1rem", color: T.muted, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}>
+                <span>{language}</span>
+                {override?.showStats !== false && <span aria-label={`${repo.stargazers_count} estrelas e ${repo.forks_count} forks`}>★ {repo.stargazers_count} · Forks {repo.forks_count}</span>}
+              </div>
+            </a>
+          );
+        })}
       </div>
       <a
-        href={GITHUB}
+        href={safeExternalUrl(content.githubUrl, GITHUB)}
         target="_blank"
         rel="noopener noreferrer"
         style={{ display: "inline-flex", marginTop: "1.5rem", color: T.rosa, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", textDecoration: "none" }}
       >
-        Ver todos os repositórios ↗
+        {content.projectsAllCta}
       </a>
     </Section>
   );
@@ -1058,6 +1012,7 @@ const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRi
 
 function KonamiEasterEgg() {
   const { T } = useT();
+  const content = useContent();
   const [triggered, setTriggered] = useState(false);
   const [petals, setPetals] = useState<{ id: number; left: number; size: number; duration: number; delay: number; rot: number }[]>([]);
   const seqRef = useRef<string[]>([]);
@@ -1085,8 +1040,8 @@ function KonamiEasterEgg() {
     <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 200, overflow: "hidden" }}>
       {/* Secret message */}
       <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", animation: "fadeInUp 0.6s ease", zIndex: 201 }}>
-        <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "2rem", fontWeight: 800, color: T.rosa, textShadow: `0 0 30px ${T.rosa}66` }}>🌸 Secret Found! 🌸</p>
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", color: T.muted, marginTop: "8px" }}>You know the Konami Code... nice.</p>
+        <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "2rem", fontWeight: 800, color: T.rosa, textShadow: `0 0 30px ${T.rosa}66` }}>🌸 {content.easterEggTitle} 🌸</p>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", color: T.muted, marginTop: "8px" }}>{content.easterEggMessage}</p>
       </div>
       {/* Falling petals */}
       {petals.map((p) => (
@@ -1144,196 +1099,6 @@ function ScrollProgress() {
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, height: "3px", zIndex: 60, background: "transparent" }}>
       <div style={{ height: "100%", width: `${progress}%`, background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, borderRadius: "0 2px 2px 0", transition: "width 0.1s linear", boxShadow: `0 0 8px ${T.rosa}55` }} />
     </div>
-  );
-}
-
-/* ───────────────────── INTERACTIVE TERMINAL ───────────────────── */
-const TERMINAL_COMMANDS: Record<string, string[]> = {
-  help: [
-    "Comandos disponíveis:",
-    "",
-    "  about     — Quem é AFPL?",
-    "  skills    — Tecnologias que já explorei",
-    "  socials   — Onde me encontrar",
-    "  projects  — Projetos e experimentos",
-    "  quote     — Uma frase aleatória",
-    "  clear     — Limpar o terminal",
-    "  exit      — Fechar o terminal",
-  ],
-  about: [
-    "┌─ Sobre AFPL ─────────────────────────┐",
-    "│                                       │",
-    "│  Uma pessoa curiosa do Brasil 🇧🇷       │",
-    "│  Gosto de programação, web e ideias   │",
-    "│  criativas feitas por diversão.      │",
-    "│                                       │",
-    "│  Sem projeto atual — só explorando   │",
-    "│  e aprendendo no meu próprio ritmo.  │",
-    "│                                       │",
-    "└───────────────────────────────────────┘",
-  ],
-  skills: [
-    "⚡ Linguagens: Python • Lua • JavaScript",
-    "🌐 Web: React • Node.js • Vite",
-    "🎨 Criatividade: Blender",
-    "📦 Ferramentas: Git • VS Code • GitHub",
-  ],
-  socials: [
-    "🐙 GitHub:    github.com/afporiginal",
-    "💬 Discord:   afploriginal",
-  ],
-  projects: [
-    "🧪 Nenhum projeto grande em andamento agora.",
-    "",
-    "   Este portfólio já é um experimento.",
-    "   Veja a seção de projetos para explorar os repositórios.",
-  ],
-};
-
-const QUOTES = [
-  '"Any fool can write code that a computer can understand. Good programmers write code that humans can understand." — Martin Fowler',
-  '"First, solve the problem. Then, write the code." — John Johnson',
-  '"Code is like humor. When you have to explain it, it\'s bad." — Cory House',
-  '"It works on my machine. ¯\\_(ツ)_/¯"',
-  '"There are only two hard things in CS: cache invalidation, naming things, and off-by-one errors."',
-  '"console.log(\'hello world\') — Every dev, day 1"',
-];
-
-function Terminal() {
-  const { T, theme } = useT();
-  const [open, setOpen] = useState(false);
-  const [lines, setLines] = useState<{ text: string; type: "input" | "output" | "error" }[]>([
-    { text: "Bem-vindo ao terminal de brincadeira do AFPL", type: "output" },
-    { text: 'Digite "help" para ver os comandos.', type: "output" },
-    { text: "", type: "output" },
-  ]);
-  const [input, setInput] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
-  const [histIdx, setHistIdx] = useState(-1);
-  const endRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isLight = theme === "light";
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [lines]);
-  useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 100); }, [open]);
-
-  const run = (cmd: string) => {
-    const c = cmd.trim().toLowerCase();
-    const newLines = [...lines, { text: `$ ${cmd}`, type: "input" as const }];
-
-    if (c === "clear") { setLines([{ text: "Terminal limpo.", type: "output" }]); return; }
-    if (c === "exit") { setOpen(false); return; }
-    if (c === "quote") {
-      const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-      setLines([...newLines, { text: "", type: "output" }, { text: q, type: "output" }, { text: "", type: "output" }]);
-      return;
-    }
-    const result = TERMINAL_COMMANDS[c];
-    if (result) {
-      setLines([...newLines, { text: "", type: "output" }, ...result.map((t) => ({ text: t, type: "output" as const })), { text: "", type: "output" }]);
-    } else {
-      setLines([...newLines, { text: `Comando não encontrado: ${c}. Digite "help" para ver as opções.`, type: "error" }]);
-    }
-  };
-
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && input.trim()) {
-      run(input);
-      setHistory((h) => [input, ...h]);
-      setHistIdx(-1);
-      setInput("");
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (history.length > 0) {
-        const ni = Math.min(histIdx + 1, history.length - 1);
-        setHistIdx(ni);
-        setInput(history[ni]);
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (histIdx > 0) { setHistIdx(histIdx - 1); setInput(history[histIdx - 1]); }
-      else { setHistIdx(-1); setInput(""); }
-    }
-  };
-
-  return (
-    <>
-      {/* FAB button */}
-      <button
-        onClick={() => setOpen(!open)}
-        style={{
-          position: "fixed", bottom: "24px", right: "24px", zIndex: 55,
-          width: "48px", height: "48px", borderRadius: "14px",
-          background: `linear-gradient(135deg, ${T.rosa}, ${T.rosa}cc)`,
-          border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 4px 20px ${T.rosa}44`,
-          transition: "transform 0.3s ease, box-shadow 0.3s ease",
-          fontSize: "1.3rem",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = `0 6px 25px ${T.rosa}66`; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = `0 4px 20px ${T.rosa}44`; }}
-        aria-label={open ? "Fechar terminal" : "Abrir terminal de brincadeira"}
-        title="Terminal de brincadeira"
-      >
-        {open ? "✕" : ">_"}
-      </button>
-
-      {/* Terminal panel */}
-      {open && (
-        <div
-          style={{
-            position: "fixed", bottom: "84px", right: "24px", zIndex: 55,
-            width: "min(460px, calc(100vw - 48px))", height: "min(380px, 55vh)",
-            borderRadius: "16px", overflow: "hidden",
-            border: `1px solid ${T.border}`,
-            background: isLight ? "#1e1b2e" : T.card,
-            boxShadow: `0 12px 50px ${T.shadow}, 0 0 0 1px ${T.border}`,
-            display: "flex", flexDirection: "column",
-            animation: "fadeInUp 0.3s ease",
-          }}
-        >
-          {/* Title bar */}
-          <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid #2a2640", background: isLight ? "#16132a" : "#0e0e16", flexShrink: 0 }}>
-            <div style={{ display: "flex", gap: "6px" }}>
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ff5f57", cursor: "pointer" }} onClick={() => setOpen(false)} />
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#febc2e" }} />
-              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#28c840" }} />
-            </div>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "#8b82a0", marginLeft: "8px" }}>afpl@portfolio ~ </span>
-          </div>
-
-          {/* Output */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", lineHeight: 1.7 }}>
-            {lines.map((l, i) => (
-              <div key={i} style={{ color: l.type === "input" ? "#e8788a" : l.type === "error" ? "#ef4444" : "#c4bcda", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                {l.text}
-              </div>
-            ))}
-            <div ref={endRef} />
-          </div>
-
-          {/* Input */}
-          <div style={{ padding: "8px 14px", borderTop: "1px solid #2a2640", display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, background: isLight ? "#16132a" : "#0e0e16" }}>
-            <span style={{ color: "#e8788a", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", flexShrink: 0 }}>$</span>
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="digite um comando..."
-              aria-label="Comando do terminal"
-              style={{
-                flex: 1, background: "transparent", border: "none", outline: "none",
-                color: "#e2e8f0", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem",
-                caretColor: "#e8788a",
-              }}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
-        </div>
-      )}
-    </>
   );
 }
 
@@ -1790,6 +1555,7 @@ function _DEAD_CODE_START() {
 /* ───────────────────── CONTACT CTA ───────────────────── */
 function ContactSection() {
   const { T, theme } = useT();
+  const content = useContent();
   const { ref, visible } = useInView(0.1);
   const isLight = theme === "light";
 
@@ -1812,26 +1578,26 @@ function ContactSection() {
         <div style={{ position: "relative", zIndex: 2, textAlign: "center" }}>
           <span style={{ fontSize: "2.5rem", display: "block", marginBottom: "1rem" }}>💬</span>
           <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: "clamp(1.5rem, 3.5vw, 2.2rem)", fontWeight: 700, color: T.text, marginBottom: "0.8rem" }}>
-            Bora trocar uma ideia?
+            {content.contactTitle}
           </h2>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", color: T.muted, lineHeight: 1.7, maxWidth: "450px", margin: "0 auto 2rem" }}>
-            Este portfólio é só um espaço pessoal. Se quiser conversar sobre código, ideias ou qualquer coisa interessante, me encontra por aqui.
+            {content.contactDescription}
           </p>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href={GITHUB} target="_blank" rel="noopener noreferrer"
+            <a href={safeExternalUrl(content.githubUrl, GITHUB)} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 28px", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", fontWeight: 600, color: "#fff", background: T.rosa, borderRadius: "12px", textDecoration: "none", transition: "all 0.3s ease", boxShadow: `0 4px 15px ${T.rosa}33` }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 25px ${T.rosa}55`; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 4px 15px ${T.rosa}33`; }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-              Meu GitHub
+              {content.githubButtonLabel}
             </a>
-            <a href="https://discord.com/users/afploriginal" target="_blank" rel="noopener noreferrer"
+            <a href={safeExternalUrl(content.discordUrl, DISCORD)} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 28px", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", fontWeight: 600, color: T.text, background: "transparent", border: `1px solid ${T.border}`, borderRadius: "12px", textDecoration: "none", transition: "all 0.3s ease" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.rosa; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.transform = "translateY(0)"; }}
             >
-              💬 Meu Discord
+              💬 {content.discordButtonLabel}
             </a>
           </div>
         </div>
@@ -1843,19 +1609,20 @@ function ContactSection() {
 /* ───────────────────── FOOTER ───────────────────── */
 function Footer() {
   const { T } = useT();
+  const content = useContent();
   return (
     <footer style={{ borderTop: `1px solid ${T.border}`, padding: "40px 24px", textAlign: "center", transition: "border-color 0.5s ease" }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-        <a href="#home" data-gradient-text="" style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1.5rem", background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, textDecoration: "none" }}>AFPL</a>
+        <a href="#home" data-gradient-text="" style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1.5rem", background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, textDecoration: "none" }}>{content.brandName}</a>
         <div style={{ display: "flex", gap: "16px" }}>
-          {[{ label: "GitHub", href: GITHUB }, { label: "Discord", href: DISCORD }].map((link) => (
-            <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
+          {[{ label: content.githubButtonLabel, href: content.githubUrl }, { label: content.discordButtonLabel, href: content.discordUrl }].map((link) => (
+            <a key={link.label} href={safeExternalUrl(link.href)} target="_blank" rel="noopener noreferrer"
               style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", color: T.muted, textDecoration: "none", transition: "color 0.3s ease" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = T.rosa)} onMouseLeave={(e) => (e.currentTarget.style.color = T.muted)}
             >{link.label}</a>
           ))}
         </div>
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: T.muted }}>© {new Date().getFullYear()} AFPL — feito com curiosidade e ☕</p>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: T.muted }}>© {new Date().getFullYear()} {content.brandName} · {content.footerText}</p>
       </div>
     </footer>
   );
@@ -1944,17 +1711,17 @@ export default function App() {
           <Particles />
           <Navbar />
           <HeroSection />
-          <QuoteBanner />
-          <TechMarquee />
-          <Divider />
-          <AboutSection />
-          <Divider flip />
-          <ProjectsSection />
-          <Divider flip />
-          <TechSection />
-          <ContactSection />
+          {content.showQuote && <QuoteBanner />}
+          {content.showAbout && <>
+            <Divider />
+            <AboutSection />
+          </>}
+          {content.showProjects && <>
+            <Divider flip />
+            <ProjectsSection />
+          </>}
+          {content.showContact && <ContactSection />}
           <Footer />
-          <Terminal />
           <ScrollToTopRewind T={T} theme={theme} />
         </div>
       </ContentCtx.Provider>
