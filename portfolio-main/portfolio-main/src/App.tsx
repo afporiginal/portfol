@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { Scene3DCanvas, ScrollToTopRewind } from "./Scene3D";
+import AdminPage from "./AdminPage";
+import { DEFAULT_CONTENT, fetchGitHubRepositories, readHiddenProjectIds, readPublicContent, type GitHubRepository, type SiteContent } from "./cms";
 
 /* ───────────────────── THEME SYSTEM (CYBER HOLOGRAPHIC) ───────────────────── */
 type Theme = "dark" | "light";
@@ -64,6 +66,12 @@ const ThemeCtx = createContext<{ theme: Theme; T: Colors; toggle: () => void }>(
 
 function useT() {
   return useContext(ThemeCtx);
+}
+
+const ContentCtx = createContext<SiteContent>(DEFAULT_CONTENT);
+
+function useContent() {
+  return useContext(ContentCtx);
 }
 
 /* ───────────────────── CONSTANTS ───────────────────── */
@@ -480,6 +488,7 @@ function SectionGlow({ color, side }: { color: string; side: "left" | "right" })
 /* ───────────────────── HERO ───────────────────── */
 function HeroSection() {
   const { T, theme } = useT();
+  const content = useContent();
   const heroImg = theme === "dark" ? IMGS.marinHeroDark : IMGS.marinHeroLight;
 
   return (
@@ -497,12 +506,12 @@ function HeroSection() {
           </div>
 
           <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 800, lineHeight: 1.15, marginBottom: "1rem" }}>
-            <span style={{ color: T.text }}>Curioso por</span><br />
-            <span data-gradient-text="" style={{ background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, display: "inline-block" }}>criação e tecnologia.</span>
+            <span style={{ color: T.text }}>{content.heroTitleLead}</span><br />
+            <span data-gradient-text="" style={{ background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, display: "inline-block" }}>{content.heroTitleHighlight}</span>
           </h1>
 
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", color: T.muted, lineHeight: 1.7, maxWidth: "480px", marginBottom: "1.5rem" }}>
-            Gosto de explorar programação, testar ideias e aprender fazendo. Este espaço é meu cantinho na internet — sem pressão de parecer uma empresa, só coisas que acho legais.
+            {content.heroDescription}
           </p>
 
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
@@ -667,10 +676,11 @@ function TechMarquee() {
 /* ───────────────────── ABOUT ───────────────────── */
 function AboutSection() {
   const { T } = useT();
+  const content = useContent();
   return (
     <Section id="about" style={{ position: "relative", overflow: "hidden" }}>
       <SectionGlow color={T.rosa} side="left" />
-      <SectionTitle>Um pouco sobre mim</SectionTitle>
+      <SectionTitle>{content.aboutSectionTitle}</SectionTitle>
       <AnimatedCard delay={0} style={{ padding: "2rem", marginBottom: "2rem" }}>
         <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
@@ -682,13 +692,13 @@ function AboutSection() {
           </div>
           <div style={{ flex: "1 1 300px" }}>
             <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.4rem", fontWeight: 700, color: T.text, marginBottom: "1rem", lineHeight: 1.3 }}>
-              Aprendendo no meu ritmo, <span data-gradient-text="" style={{ background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, display: "inline-block" }}>criando por curiosidade.</span>
+              {content.aboutTitleLead} <span data-gradient-text="" style={{ background: `linear-gradient(90deg, ${T.rosa}, ${T.gold})`, display: "inline-block" }}>{content.aboutTitleHighlight}</span>
             </h3>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", color: T.muted, lineHeight: 1.85, marginBottom: "1rem" }}>
-              Já explorei linguagens como <strong style={{ color: T.rosa }}>Python</strong>, <strong style={{ color: T.gold }}>Lua</strong> e JavaScript. Nem tudo virou um grande projeto — e tudo bem: experimentar também faz parte de aprender.
+              {content.aboutParagraphOne}
             </p>
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", color: T.muted, lineHeight: 1.85, marginBottom: "1rem" }}>
-              No momento estou sem um projeto específico. Quando surgir uma ideia divertida, ela aparece por aqui. Por enquanto, este portfólio já é um laboratório para brincar com código, visual e interações.
+              {content.aboutParagraphTwo}
             </p>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {["Curiosidade", "Programação", "Web", "Experimentos"].map((tag) => (
@@ -879,36 +889,9 @@ function SetupCard({ item, index, visible, T, isLight }: { item: { icon: string;
 }
 
 /* ───────────────────── GITHUB SECTION ───────────────────── */
-interface GitHubRepository {
-  id: number;
-  name: string;
-  description: string | null;
-  html_url: string;
-  language: string | null;
-  stargazers_count: number;
-  forks_count: number;
-  updated_at: string;
-  fork: boolean;
-  archived: boolean;
-}
-
-function isGitHubRepository(value: unknown): value is GitHubRepository {
-  if (typeof value !== "object" || value === null) return false;
-  const repo = value as Record<string, unknown>;
-  return typeof repo.id === "number"
-    && typeof repo.name === "string"
-    && (typeof repo.description === "string" || repo.description === null)
-    && typeof repo.html_url === "string"
-    && (typeof repo.language === "string" || repo.language === null)
-    && typeof repo.stargazers_count === "number"
-    && typeof repo.forks_count === "number"
-    && typeof repo.updated_at === "string"
-    && typeof repo.fork === "boolean"
-    && typeof repo.archived === "boolean";
-}
-
 function ProjectsSection() {
   const { T, theme } = useT();
+  const content = useContent();
   const { ref, visible } = useInView(0.05);
   const [repositories, setRepositories] = useState<GitHubRepository[] | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -919,18 +902,11 @@ function ProjectsSection() {
 
     async function loadRepositories() {
       try {
-        const response = await fetch(
-          "https://api.github.com/users/afporiginal/repos?type=owner&sort=updated&per_page=100",
-          { signal: controller.signal, headers: { Accept: "application/vnd.github+json" } },
-        );
-        if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
-
-        const payload: unknown = await response.json();
-        if (!Array.isArray(payload) || !payload.every(isGitHubRepository)) {
-          throw new Error("Unexpected GitHub repository response");
-        }
-
-        setRepositories(payload.filter((repo) => !repo.fork && !repo.archived).slice(0, 6));
+        const [repos, hiddenIds] = await Promise.all([
+          fetchGitHubRepositories(controller.signal),
+          readHiddenProjectIds(),
+        ]);
+        setRepositories(repos.filter((repo) => !hiddenIds.has(repo.id)).slice(0, 6));
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Could not load GitHub repositories.", error);
@@ -946,9 +922,9 @@ function ProjectsSection() {
 
   return (
     <Section id="projects">
-      <SectionTitle>Projetos & experimentos</SectionTitle>
+      <SectionTitle>{content.projectsTitle}</SectionTitle>
       <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "1rem", color: T.muted, lineHeight: 1.7, maxWidth: "620px", margin: "-1.5rem 0 2rem" }}>
-        Uma vitrine viva dos meus repositórios públicos. Ainda sem um projeto principal? Sem problema — aqui entram os experimentos também.
+        {content.projectsDescription}
       </p>
       <div
         ref={ref}
@@ -1887,6 +1863,7 @@ function Footer() {
 
 /* ───────────────────── APP ───────────────────── */
 export default function App() {
+  const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT);
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -1938,8 +1915,25 @@ export default function App() {
     if (!document.getElementById("dyn-scroll")) document.head.appendChild(s);
   }, [T]);
 
+  useEffect(() => {
+    let active = true;
+    void readPublicContent()
+      .then((savedContent) => {
+        if (active) setContent({ ...DEFAULT_CONTENT, ...savedContent });
+      })
+      .catch((error: unknown) => {
+        console.warn("Could not load saved site content; using defaults.", error);
+      });
+    return () => { active = false; };
+  }, []);
+
+  if (new URLSearchParams(window.location.search).has("admin")) {
+    return <AdminPage />;
+  }
+
   return (
     <ThemeCtx.Provider value={{ theme, T, toggle }}>
+      <ContentCtx.Provider value={content}>
         <div style={{ background: T.bg, minHeight: "100vh", transition: "background 0.5s ease", animation: "fadeIn 0.5s ease", position: "relative" }}>
           {/* CRT overlay */}
           <div className="crt-overlay" />
@@ -1963,6 +1957,7 @@ export default function App() {
           <Terminal />
           <ScrollToTopRewind T={T} theme={theme} />
         </div>
+      </ContentCtx.Provider>
     </ThemeCtx.Provider>
   );
 }
