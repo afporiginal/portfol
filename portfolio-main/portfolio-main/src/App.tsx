@@ -25,35 +25,35 @@ interface Colors {
 
 const THEMES: Record<Theme, Colors> = {
   dark: {
-    rosa: "#f2a0b3",
-    gold: "#7ec8e3",
-    bg: "#0d0a10",         // Deep plum-black
-    bgAlt: "#110e15",
-    card: "#15121c",       // Dark lavender card
-    cardHover: "#1c1826",
-    border: "#2a2235",     // Soft purple border
-    muted: "#7a7088",      // Lavender gray
-    text: "#f0e8f5",       // Warm white with pink tint
-    textSoft: "#c4b8d0",
-    navBg: "rgba(13,10,16,0.82)",
-    shadow: "rgba(0,0,0,0.4)",
-    gridLine: "#f2a0b312",
+    rosa: "#e43d50",
+    gold: "#91a7b5",
+    bg: "#090a0d",
+    bgAlt: "#101116",
+    card: "#14151a",
+    cardHover: "#1b1b21",
+    border: "#34323a",
+    muted: "#a49ba2",
+    text: "#f3eff1",
+    textSoft: "#c8c0c6",
+    navBg: "rgba(9,10,13,0.92)",
+    shadow: "rgba(0,0,0,0.48)",
+    gridLine: "#e43d5012",
     particleOpacity: 1,
   },
   light: {
-    rosa: "#e0758e",
-    gold: "#5aabb8",
-    bg: "#fef8f9",
-    bgAlt: "#faf0f2",
-    card: "#ffffff",
-    cardHover: "#fffbfc",
-    border: "#f0d8de",     // Pink-tinted border
-    muted: "#9a8a94",
-    text: "#1a0f18",
-    textSoft: "#5a4558",
-    navBg: "rgba(254,248,249,0.85)",
-    shadow: "rgba(200,140,160,0.1)",
-    gridLine: "#e0758e08",
+    rosa: "#b83243",
+    gold: "#506a79",
+    bg: "#f2f0f0",
+    bgAlt: "#e8e5e5",
+    card: "#fcfbfb",
+    cardHover: "#ffffff",
+    border: "#d8d1d2",
+    muted: "#69656b",
+    text: "#1d1b1f",
+    textSoft: "#4c474d",
+    navBg: "rgba(242,240,240,0.94)",
+    shadow: "rgba(36,25,30,0.12)",
+    gridLine: "#b832430c",
     particleOpacity: 0.5,
   },
 };
@@ -352,7 +352,7 @@ function Navbar() {
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             {navItems.map((item) => (
               <a key={item.id} href={`#${item.id}`} onClick={() => setActive(item.id)}
-                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", fontWeight: 500, padding: "6px 14px", borderRadius: "8px", color: active === item.id ? T.rosa : T.muted, background: active === item.id ? `${T.rosa}15` : "transparent", textDecoration: "none", transition: "all 0.3s ease", letterSpacing: "0.05em" }}
+                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.78rem", fontWeight: active === item.id ? 700 : 500, padding: "6px 12px", borderRadius: "3px", borderBottom: `2px solid ${active === item.id ? T.rosa : "transparent"}`, color: active === item.id ? T.rosa : T.muted, background: active === item.id ? `${T.rosa}0a` : "transparent", textDecoration: "none", transition: "all 0.3s ease" }}
                 onMouseEnter={(e) => { if (active !== item.id) { e.currentTarget.style.color = T.text; e.currentTarget.style.background = `${T.rosa}10`; } }}
                 onMouseLeave={(e) => { if (active !== item.id) { e.currentTarget.style.color = T.muted; e.currentTarget.style.background = "transparent"; } }}
               >{item.label}</a>
@@ -394,7 +394,7 @@ function Navbar() {
             {navItems.map((item) => (
               <a key={item.id} href={`#${item.id}`}
                 onClick={() => { setActive(item.id); setMenuOpen(false); }}
-                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", fontWeight: 500, padding: "10px 12px", borderRadius: "10px", color: active === item.id ? T.rosa : T.muted, background: active === item.id ? `${T.rosa}15` : "transparent", textDecoration: "none", transition: "all 0.2s ease" }}
+                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.84rem", fontWeight: 500, padding: "10px 12px", borderRadius: "3px", borderLeft: `2px solid ${active === item.id ? T.rosa : "transparent"}`, color: active === item.id ? T.rosa : T.muted, background: active === item.id ? `${T.rosa}0a` : "transparent", textDecoration: "none", transition: "all 0.2s ease" }}
               >{item.label}</a>
             ))}
           </div>

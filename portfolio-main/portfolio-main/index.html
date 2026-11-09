@@ -16,18 +16,18 @@
     <style>
       *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
       html { scroll-behavior: smooth; }
-      :focus-visible { outline: 2px solid #f2a0b3; outline-offset: 4px; }
+      :focus-visible { outline: 2px solid #e43d50; outline-offset: 3px; }
       body {
         font-family: 'Inter', sans-serif;
-        background: #0a0a0f;
-        color: #e2e8f0;
+        background: #090a0d;
+        color: #f3eff1;
         overflow-x: hidden;
         transition: background 0.4s ease, color 0.4s ease;
       }
       ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: #0a0a0f; }
-      ::-webkit-scrollbar-thumb { background: #e8788a44; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #e8788a88; }
+      ::-webkit-scrollbar-track { background: #090a0d; }
+      ::-webkit-scrollbar-thumb { background: #e43d5055; border-radius: 2px; }
+      ::-webkit-scrollbar-thumb:hover { background: #e43d50aa; }
 
       /* Prevent gradient text from inheriting color/background transitions — fixes WebKit rendering bug */
       [data-gradient-text] {
@@ -43,9 +43,9 @@
         inset: 0;
         z-index: 999;
         pointer-events: none;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.16) 50%), linear-gradient(90deg, rgba(228, 61, 80, 0.035), rgba(145, 167, 181, 0.015), rgba(228, 61, 80, 0.025));
         background-size: 100% 4px, 6px 100%;
-        opacity: 0.15;
+        opacity: 0.08;
       }
       .crt-overlay::after {
         content: " ";
