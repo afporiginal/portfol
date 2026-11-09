@@ -9,6 +9,23 @@ export const supabase = supabaseUrl && supabaseAnonKey
 
 export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL?.trim().toLowerCase() ?? "";
 
+export const AKAME_IMAGES = {
+  avatar: "./image.png",
+  action: "./image%20copy%204.png",
+  dramatic: "./image%20copy%203.png",
+  fullBody: "./image%20copy.png",
+  closeup: "./image%20copy%202.png",
+};
+
+const LOCAL_IMAGES = new Set(Object.values(AKAME_IMAGES));
+const LEGACY_MARIN_MEDIA = new Set([
+  "https://github.com/afporiginal/afporiginal/blob/main/images/Marin5.png?raw=true",
+  "https://github.com/afporiginal/afporiginal/blob/main/images/38_Sem_Titulo_20260508142505.png?raw=true",
+  "https://github.com/afporiginal/afporiginal/blob/main/images/37_Sem_Titulo_20260508142825.png?raw=true",
+  "https://raw.githubusercontent.com/afporiginal/afporiginal/main/images/Kitagawa_Marin-removebg-preview.png",
+  "https://images.weserv.nl/?url=https://raw.githubusercontent.com/afporiginal/afporiginal/main/images/%F0%9D%96%AC%F0%9D%96%BA%F0%9D%97%8B%F0%9D%97%82%F0%9D%97%87%20%F0%9D%96%AA%F0%9D%97%82%F0%9D%97%8D%F0%9D%96%BA%F0%9D%97%80%F0%9D%96%BA%F0%9D%97%90%F0%9D%96%BA%20%E2%9C%BF.webp&w=200&h=200&fit=cover&mask=circle&output=png",
+]);
+
 export interface ContentCard {
   icon: string;
   title: string;
@@ -98,17 +115,17 @@ export const DEFAULT_CONTENT: SiteContent = {
   heroDescription: "Sou um desenvolvedor autodidata do Brasil. Comecei explorando Python e Lua; hoje também crio para a web e experimento com projetos visuais. Gosto de entender como as coisas funcionam e transformar ideias em algo que dá para testar.",
   heroPrimaryLabel: "Explorar projetos ↓",
   heroSecondaryLabel: "Meu GitHub ↗",
-  heroAvatarUrl: "https://images.weserv.nl/?url=https://raw.githubusercontent.com/afporiginal/afporiginal/main/images/%F0%9D%96%AC%F0%9D%96%BA%F0%9D%97%8B%F0%9D%97%82%F0%9D%97%87%20%F0%9D%96%AA%F0%9D%97%82%F0%9D%97%8D%F0%9D%96%BA%F0%9D%97%80%F0%9D%96%BA%F0%9D%97%90%F0%9D%96%BA%20%E2%9C%BF.webp&w=200&h=200&fit=cover&mask=circle&output=png",
-  heroDarkImageUrl: "https://github.com/afporiginal/afporiginal/blob/main/images/38_Sem_Titulo_20260508142505.png?raw=true",
-  heroLightImageUrl: "https://github.com/afporiginal/afporiginal/blob/main/images/37_Sem_Titulo_20260508142825.png?raw=true",
-  heroImageAlt: "Ilustração de Marin Kitagawa",
-  heroImageCaption: "Meu cantinho criativo ✿",
+  heroAvatarUrl: AKAME_IMAGES.avatar,
+  heroDarkImageUrl: AKAME_IMAGES.action,
+  heroLightImageUrl: AKAME_IMAGES.dramatic,
+  heroImageAlt: "Ilustração da Akame, de Akame ga Kill!",
+  heroImageCaption: "Akame · Akame ga Kill!",
   quoteLead: "Uma ideia não precisa nascer pronta —",
   quoteHighlight: "experimentar já é parte da criação.",
   quoteSignature: "AFPL · laboratório pessoal",
   aboutSectionTitle: "O que me move",
-  aboutImageUrl: "https://raw.githubusercontent.com/afporiginal/afporiginal/main/images/Kitagawa_Marin-removebg-preview.png",
-  aboutImageAlt: "Ilustração decorativa do portfólio",
+  aboutImageUrl: AKAME_IMAGES.fullBody,
+  aboutImageAlt: "Akame em pose de combate",
   aboutCountry: "Brasil",
   aboutTitleLead: "Aprender fazendo,",
   aboutTitleHighlight: "com curiosidade e propósito.",
