@@ -354,7 +354,7 @@ export default function AdminPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: "16px" }}>
                   {CONTENT_FIELDS.filter((field) => field.section === activeSection).map((field) => (
                     <div key={field.key}>
-                      <Field label={field.label} type={field.inputType ?? "text"} multiline={field.multiline} value={content[field.key]} onChange={(value) => updateText(field.key, value)} maxLength={field.multiline ? 5000 : 500} />
+                      <Field label={field.label} type={field.inputType === "url" ? "url" : "text"} multiline={field.multiline} value={content[field.key]} onChange={(value) => updateText(field.key, value)} maxLength={field.multiline ? 5000 : 500} />
                       {field.inputType === "url" && content[field.key].startsWith("https://") && (
                         <a href={safeExternalUrl(content[field.key])} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: "5px", color: BLUE, fontSize: "0.76rem" }}>Testar link ↗</a>
                       )}

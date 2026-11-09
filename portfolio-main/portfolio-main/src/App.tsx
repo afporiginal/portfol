@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { Scene3DCanvas, ScrollToTopRewind } from "./Scene3D";
 import AdminPage from "./AdminPage";
-import { DEFAULT_CONTENT, fetchGitHubRepositories, readHiddenProjectIds, readPublicContent, safeExternalUrl, type ContentCard, type GitHubRepository, type SiteContent } from "./cms";
+import { AKAME_IMAGES, DEFAULT_CONTENT, fetchGitHubRepositories, normalizeSiteContent, readHiddenProjectIds, readPublicContent, safeExternalUrl, safeImageUrl, type ContentCard, type GitHubRepository, type SiteContent } from "./cms";
 
 /* ───────────────────── THEME SYSTEM (CYBER HOLOGRAPHIC) ───────────────────── */
 type Theme = "dark" | "light";
@@ -25,8 +25,8 @@ interface Colors {
 
 const THEMES: Record<Theme, Colors> = {
   dark: {
-    rosa: "#f2a0b3",       // Sakura pink (Marin's blush)
-    gold: "#7ec8e3",       // Marin's eye blue
+    rosa: "#f2a0b3",
+    gold: "#7ec8e3",
     bg: "#0d0a10",         // Deep plum-black
     bgAlt: "#110e15",
     card: "#15121c",       // Dark lavender card
@@ -43,7 +43,7 @@ const THEMES: Record<Theme, Colors> = {
   light: {
     rosa: "#e0758e",
     gold: "#5aabb8",
-    bg: "#fef8f9",         // Soft sakura white
+    bg: "#fef8f9",
     bgAlt: "#faf0f2",
     card: "#ffffff",
     cardHover: "#fffbfc",
@@ -75,15 +75,6 @@ function useContent() {
 }
 
 /* ───────────────────── CONSTANTS ───────────────────── */
-const IMGS = {
-  marinLanding: "https://github.com/afporiginal/afporiginal/blob/main/images/Marin5.png?raw=true",
-  marinHeroDark: "https://github.com/afporiginal/afporiginal/blob/main/images/38_Sem_Titulo_20260508142505.png?raw=true",
-  marinHeroLight: "https://github.com/afporiginal/afporiginal/blob/main/images/37_Sem_Titulo_20260508142825.png?raw=true",
-  marinPeace: "https://raw.githubusercontent.com/afporiginal/afporiginal/main/images/Kitagawa_Marin-removebg-preview.png",
-  marinAvatar:
-    "https://images.weserv.nl/?url=https://raw.githubusercontent.com/afporiginal/afporiginal/main/images/%F0%9D%96%AC%F0%9D%96%BA%F0%9D%97%8B%F0%9D%97%82%F0%9D%97%87%20%F0%9D%96%AA%F0%9D%97%82%F0%9D%97%8D%F0%9D%96%BA%F0%9D%97%80%F0%9D%96%BA%F0%9D%97%90%F0%9D%96%BA%20%E2%9C%BF.webp&w=200&h=200&fit=cover&mask=circle&output=png",
-};
-
 const GITHUB = "https://github.com/afporiginal";
 const DISCORD = "https://discord.com/users/afploriginal";
 
@@ -301,7 +292,7 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
           <div style={{ position: "relative", zIndex: 5, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ position: "absolute", width: "200px", height: "200px", borderRadius: "50%", background: `radial-gradient(circle, ${T.rosa}30 0%, transparent 70%)`, filter: "blur(15px)", animation: "glow-ring 4s ease-in-out infinite" }} />
             <div style={{ width: "clamp(160px, 24vw, 210px)", height: "clamp(160px, 24vw, 210px)", borderRadius: "50%", overflow: "hidden", border: `3px solid ${T.rosa}66`, boxShadow: `0 0 30px ${T.rosa}33, 0 0 60px ${T.rosa}15, inset 0 0 20px ${T.rosa}11`, position: "relative" }}>
-              <img src={IMGS.marinLanding} alt="Marin Kitagawa" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", pointerEvents: "none" }} />
+              <img src={safeImageUrl(AKAME_IMAGES.avatar, AKAME_IMAGES.avatar)} alt="Akame, de Akame ga Kill!" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", pointerEvents: "none" }} />
             </div>
           </div>
         </div>
@@ -474,14 +465,14 @@ function SectionGlow({ color, side }: { color: string; side: "left" | "right" })
 function HeroSection() {
   const { T, theme } = useT();
   const content = useContent();
-  const heroImg = safeExternalUrl(theme === "dark" ? content.heroDarkImageUrl : content.heroLightImageUrl, IMGS.marinHeroDark);
+  const heroImg = safeImageUrl(theme === "dark" ? content.heroDarkImageUrl : content.heroLightImageUrl, AKAME_IMAGES.action);
 
   return (
     <Section id="home" style={{ paddingTop: "120px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "3rem", flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 400px", minWidth: "280px" }}>
+        <div style={{ flex: "1 1 400px", minWidth: "min(100%, 280px)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1rem" }}>
-            <img src={safeExternalUrl(content.heroAvatarUrl, IMGS.marinAvatar)} alt={content.heroName} style={{ width: "48px", height: "48px", borderRadius: "50%", border: `2px solid ${T.rosa}` }} />
+            <img src={safeImageUrl(content.heroAvatarUrl, AKAME_IMAGES.avatar)} alt={content.heroName} style={{ width: "48px", height: "48px", borderRadius: "50%", border: `2px solid ${T.rosa}` }} />
             <div>
               <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: T.muted }}>
                 <span style={{ animation: "wave-hand 2.5s infinite", display: "inline-block", transformOrigin: "70% 70%" }}>👋</span> {content.heroEyebrow}
@@ -653,7 +644,7 @@ function AboutSection() {
       <AnimatedCard delay={0} style={{ padding: "2rem", marginBottom: "2rem" }}>
         <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-            <img src={safeExternalUrl(content.aboutImageUrl, IMGS.marinPeace)} alt={content.aboutImageAlt} style={{ width: "clamp(100px, 15vw, 140px)", borderRadius: "16px", filter: `drop-shadow(0 0 20px ${T.rosa}33)`, animation: "floatSlow 6s ease-in-out infinite" }} />
+            <img src={safeImageUrl(content.aboutImageUrl, AKAME_IMAGES.fullBody)} alt={content.aboutImageAlt} style={{ width: "clamp(100px, 15vw, 140px)", borderRadius: "16px", filter: `drop-shadow(0 0 20px ${T.rosa}33)`, animation: "floatSlow 6s ease-in-out infinite" }} />
             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 12px", borderRadius: "12px", background: `${T.rosa}15`, border: `1px solid ${T.rosa}33` }}>
               <span style={{ fontSize: "0.7rem" }}>🇧🇷</span>
               <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: T.rosa }}>{content.aboutCountry}</span>
@@ -678,7 +669,7 @@ function AboutSection() {
         </div>
       </AnimatedCard>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "2rem" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <h3 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: "1.2rem", color: T.text, display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "1.3rem" }}>⚡</span> {content.aboutInterestsTitle}</h3>
           {content.aboutInterests.map((item, i) => <AboutDetailCard key={`${item.title}-${i}`} item={item} index={i} tone="pink" />)}
@@ -953,6 +944,7 @@ function ProjectsSection() {
 
 function GitHubSection() {
   const { T, theme } = useT();
+  const content = useContent();
   const { ref, visible } = useInView(0.05);
   const [hovered, setHovered] = useState(false);
   const isLight = theme === "light";
@@ -969,7 +961,7 @@ function GitHubSection() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "-50px", position: "relative", zIndex: 2 }}>
           <div style={{ width: "100px", height: "100px", borderRadius: "50%", border: `4px solid ${T.card}`, overflow: "hidden", boxShadow: `0 0 30px ${T.rosa}33` }}>
-            <img src={IMGS.marinAvatar} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={safeImageUrl(content.heroAvatarUrl, AKAME_IMAGES.avatar)} alt={content.heroName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <h3 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: "1.5rem", color: T.text, marginTop: "12px" }}>afporiginal</h3>
           <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", color: T.muted, marginTop: "4px" }}>Developer & Creator from Brazil 🇧🇷</p>
@@ -1631,6 +1623,7 @@ function Footer() {
 /* ───────────────────── APP ───────────────────── */
 export default function App() {
   const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT);
+  const [contentReady, setContentReady] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -1686,16 +1679,27 @@ export default function App() {
     let active = true;
     void readPublicContent()
       .then((savedContent) => {
-        if (active) setContent({ ...DEFAULT_CONTENT, ...savedContent });
+        if (active) setContent({ ...DEFAULT_CONTENT, ...normalizeSiteContent(savedContent) });
       })
       .catch((error: unknown) => {
         console.warn("Could not load saved site content; using defaults.", error);
+      })
+      .finally(() => {
+        if (active) setContentReady(true);
       });
     return () => { active = false; };
   }, []);
 
   if (new URLSearchParams(window.location.search).has("admin")) {
     return <AdminPage />;
+  }
+
+  if (!contentReady) {
+    return (
+      <div role="status" aria-live="polite" style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", background: T.bg, color: T.muted, fontFamily: "'JetBrains Mono', monospace", fontSize: "0.82rem" }}>
+        Carregando portfólio…
+      </div>
+    );
   }
 
   return (

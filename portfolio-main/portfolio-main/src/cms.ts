@@ -18,6 +18,10 @@ export const AKAME_IMAGES = {
 };
 
 const LOCAL_IMAGES = new Set(Object.values(AKAME_IMAGES));
+const LEGACY_MEDIA_FIELDS = new Set([
+  "heroAvatarUrl", "heroDarkImageUrl", "heroLightImageUrl", "heroImageAlt", "heroImageCaption",
+  "aboutImageUrl", "aboutImageAlt",
+]);
 const LEGACY_MARIN_MEDIA = new Set([
   "https://github.com/afporiginal/afporiginal/blob/main/images/Marin5.png?raw=true",
   "https://github.com/afporiginal/afporiginal/blob/main/images/38_Sem_Titulo_20260508142505.png?raw=true",
@@ -179,7 +183,7 @@ export type TextContentKey = {
 export type ContentSection = "Início" | "Frase" | "Sobre" | "Projetos" | "Contato" | "Rodapé";
 export const CONTENT_SECTIONS: ContentSection[] = ["Início", "Frase", "Sobre", "Projetos", "Contato", "Rodapé"];
 
-export const CONTENT_FIELDS: { key: TextContentKey; section: ContentSection; label: string; multiline?: boolean; inputType?: "url" }[] = [
+export const CONTENT_FIELDS: { key: TextContentKey; section: ContentSection; label: string; multiline?: boolean; inputType?: "url" | "image" }[] = [
   { section: "Início", key: "brandName", label: "Nome do site" },
   { section: "Início", key: "navHome", label: "Menu: início" },
   { section: "Início", key: "navAbout", label: "Menu: sobre" },
@@ -192,16 +196,16 @@ export const CONTENT_FIELDS: { key: TextContentKey; section: ContentSection; lab
   { section: "Início", key: "heroDescription", label: "Apresentação", multiline: true },
   { section: "Início", key: "heroPrimaryLabel", label: "Botão de projetos" },
   { section: "Início", key: "heroSecondaryLabel", label: "Botão do GitHub" },
-  { section: "Início", key: "heroAvatarUrl", label: "URL do avatar", inputType: "url" },
-  { section: "Início", key: "heroDarkImageUrl", label: "Imagem (tema escuro)", inputType: "url" },
-  { section: "Início", key: "heroLightImageUrl", label: "Imagem (tema claro)", inputType: "url" },
+  { section: "Início", key: "heroAvatarUrl", label: "Imagem do avatar (arquivo local ou HTTPS)", inputType: "image" },
+  { section: "Início", key: "heroDarkImageUrl", label: "Imagem (tema escuro, arquivo local ou HTTPS)", inputType: "image" },
+  { section: "Início", key: "heroLightImageUrl", label: "Imagem (tema claro, arquivo local ou HTTPS)", inputType: "image" },
   { section: "Início", key: "heroImageAlt", label: "Descrição da imagem", multiline: true },
   { section: "Início", key: "heroImageCaption", label: "Legenda da imagem" },
   { section: "Frase", key: "quoteLead", label: "Frase: começo", multiline: true },
   { section: "Frase", key: "quoteHighlight", label: "Frase: trecho destacado", multiline: true },
   { section: "Frase", key: "quoteSignature", label: "Assinatura da frase" },
   { section: "Sobre", key: "aboutSectionTitle", label: "Título da seção" },
-  { section: "Sobre", key: "aboutImageUrl", label: "URL da imagem", inputType: "url" },
+  { section: "Sobre", key: "aboutImageUrl", label: "Imagem (arquivo local ou HTTPS)", inputType: "image" },
   { section: "Sobre", key: "aboutImageAlt", label: "Descrição da imagem" },
   { section: "Sobre", key: "aboutCountry", label: "País / localização" },
   { section: "Sobre", key: "aboutTitleLead", label: "Chamada: começo" },
@@ -243,7 +247,10 @@ export function normalizeSiteContent(value: unknown): Partial<SiteContent> {
 
   for (const [key, fallback] of Object.entries(DEFAULT_CONTENT)) {
     const candidate = record[key];
-    if (typeof fallback === "string" && typeof candidate === "string") normalized[key] = candidate.slice(0, 10000);
+    if (typeof fallback === "string" && typeof candidate === "string") {
+      if (LEGACY_MARIN_MEDIA.has(candidate) || (LEGACY_MEDIA_FIELDS.has(key) && /marin|kitagawa/i.test(candidate))) continue;
+      normalized[key] = candidate.slice(0, 10000);
+    }
     else if (typeof fallback === "boolean" && typeof candidate === "boolean") normalized[key] = candidate;
     else if (typeof fallback === "number" && typeof candidate === "number" && Number.isFinite(candidate)) normalized[key] = Math.max(1, Math.min(30, Math.round(candidate)));
     else if ((key === "aboutTags") && Array.isArray(candidate)) {
@@ -372,4 +379,9 @@ export function safeExternalUrl(value: string, fallback = "#") {
   } catch {
     return fallback;
   }
+}
+
+export function safeImageUrl(value: string, fallback: string) {
+  if (LOCAL_IMAGES.has(value)) return value;
+  return safeExternalUrl(value, fallback);
 }
