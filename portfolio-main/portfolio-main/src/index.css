@@ -1,0 +1,8 @@
+@import "tailwindcss" layer(base);
+
+@layer base {
+  img, svg, video, canvas, audio, iframe, embed, object {
+    display: initial;
+    vertical-align: initial;
+  }
+}

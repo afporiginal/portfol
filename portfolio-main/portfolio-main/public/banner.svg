@@ -1,0 +1,233 @@
+<svg fill="none" viewBox="0 0 900 400" width="900" height="400" xmlns="http://www.w3.org/2000/svg">
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <style>
+        @keyframes gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float1 {
+          0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+          10% { opacity: 0.6; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-380px) translateX(40px); opacity: 0; }
+        }
+        @keyframes float2 {
+          0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+          10% { opacity: 0.4; }
+          90% { opacity: 0.4; }
+          100% { transform: translateY(-380px) translateX(-30px); opacity: 0; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.03; transform: scale(1); }
+          50% { opacity: 0.08; transform: scale(1.05); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes fadein {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(232,120,138,0.15), 0 0 40px rgba(232,120,138,0.05); }
+          50% { box-shadow: 0 0 30px rgba(232,120,138,0.25), 0 0 60px rgba(232,120,138,0.1); }
+        }
+        @keyframes orbit1 {
+          from { transform: rotate(0deg) translateX(130px) rotate(0deg); }
+          to { transform: rotate(360deg) translateX(130px) rotate(-360deg); }
+        }
+        @keyframes orbit2 {
+          from { transform: rotate(0deg) translateX(95px) rotate(0deg); }
+          to { transform: rotate(-360deg) translateX(95px) rotate(360deg); }
+        }
+
+        .scene {
+          width: 100%;
+          height: 400px;
+          background: #0a0a0f;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        /* Ambient gradient blobs */
+        .blob1 {
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(232,120,138,0.08) 0%, transparent 70%);
+          top: 10%;
+          left: 15%;
+          animation: pulse 8s ease-in-out infinite;
+        }
+        .blob2 {
+          position: absolute;
+          width: 250px;
+          height: 250px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(245,197,66,0.06) 0%, transparent 70%);
+          bottom: 5%;
+          right: 10%;
+          animation: pulse 10s ease-in-out 2s infinite;
+        }
+
+        /* Floating particles */
+        .p {
+          position: absolute;
+          bottom: -5px;
+          border-radius: 50%;
+        }
+
+        /* Grid lines */
+        .grid {
+          position: absolute;
+          bottom: 0;
+          left: -10%;
+          right: -10%;
+          height: 45%;
+          background-image:
+            linear-gradient(rgba(232,120,138,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(232,120,138,0.04) 1px, transparent 1px);
+          background-size: 50px 50px;
+          mask-image: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 80%);
+          -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 80%);
+        }
+
+        /* Center content */
+        .content {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0;
+          animation: fadein 1s ease;
+        }
+
+        .name {
+          font-size: 52px;
+          font-weight: 800;
+          letter-spacing: -1px;
+          background: linear-gradient(135deg, #e8788a, #f5c542, #e8788a);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 4s linear infinite;
+          line-height: 1;
+          margin: 0;
+        }
+
+        .sub {
+          font-family: 'Courier New', monospace;
+          font-size: 11px;
+          color: #555;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin-top: 10px;
+        }
+
+        .btn {
+          margin-top: 28px;
+          padding: 10px 28px;
+          font-family: 'Courier New', monospace;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: #fff;
+          background: linear-gradient(135deg, #e8788a, #d4627a);
+          border: none;
+          border-radius: 10px;
+          text-decoration: none;
+          animation: glow 3s ease-in-out infinite;
+          display: inline-block;
+        }
+
+        /* Orbiting dots around center */
+        .orbit-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+        }
+        .orbit-dot {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          top: -3px;
+          left: -3px;
+        }
+        .od1 { animation: orbit1 20s linear infinite; background: rgba(232,120,138,0.3); }
+        .od2 { animation: orbit1 20s linear -5s infinite; background: rgba(245,197,66,0.25); }
+        .od3 { animation: orbit1 20s linear -10s infinite; background: rgba(232,120,138,0.2); }
+        .od4 { animation: orbit1 20s linear -15s infinite; background: rgba(245,197,66,0.2); }
+        .od5 { animation: orbit2 15s linear infinite; background: rgba(232,120,138,0.25); }
+        .od6 { animation: orbit2 15s linear -5s infinite; background: rgba(245,197,66,0.2); }
+        .od7 { animation: orbit2 15s linear -10s infinite; background: rgba(232,120,138,0.15); }
+
+        /* Orbit rings (subtle) */
+        .ring {
+          position: absolute;
+          border-radius: 50%;
+          border: 1px solid rgba(232,120,138,0.06);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .ring1 { width: 260px; height: 260px; }
+        .ring2 { width: 190px; height: 190px; }
+      </style>
+
+      <div class="scene">
+        <!-- Background effects -->
+        <div class="blob1"></div>
+        <div class="blob2"></div>
+        <div class="grid"></div>
+
+        <!-- Orbit rings -->
+        <div class="ring ring1"></div>
+        <div class="ring ring2"></div>
+
+        <!-- Orbiting dots -->
+        <div class="orbit-container">
+          <div class="orbit-dot od1"></div>
+          <div class="orbit-dot od2"></div>
+          <div class="orbit-dot od3"></div>
+          <div class="orbit-dot od4"></div>
+          <div class="orbit-dot od5"></div>
+          <div class="orbit-dot od6"></div>
+          <div class="orbit-dot od7"></div>
+        </div>
+
+        <!-- Floating particles -->
+        <div class="p" style="left:8%;width:3px;height:3px;background:rgba(232,120,138,0.4);animation:float1 9s 0s infinite"></div>
+        <div class="p" style="left:15%;width:2px;height:2px;background:rgba(245,197,66,0.3);animation:float2 11s 1s infinite"></div>
+        <div class="p" style="left:25%;width:2px;height:2px;background:rgba(232,120,138,0.3);animation:float1 8s 3s infinite"></div>
+        <div class="p" style="left:35%;width:3px;height:3px;background:rgba(245,197,66,0.35);animation:float2 10s 0.5s infinite"></div>
+        <div class="p" style="left:45%;width:2px;height:2px;background:rgba(232,120,138,0.25);animation:float1 12s 2s infinite"></div>
+        <div class="p" style="left:55%;width:3px;height:3px;background:rgba(232,120,138,0.4);animation:float2 9s 4s infinite"></div>
+        <div class="p" style="left:65%;width:2px;height:2px;background:rgba(245,197,66,0.3);animation:float1 11s 1.5s infinite"></div>
+        <div class="p" style="left:75%;width:2px;height:2px;background:rgba(232,120,138,0.3);animation:float2 8s 3.5s infinite"></div>
+        <div class="p" style="left:85%;width:3px;height:3px;background:rgba(245,197,66,0.25);animation:float1 10s 0.8s infinite"></div>
+        <div class="p" style="left:92%;width:2px;height:2px;background:rgba(232,120,138,0.35);animation:float2 12s 2.5s infinite"></div>
+
+        <!-- Content -->
+        <div class="content">
+          <div class="name">AFPL</div>
+          <div class="sub">enter my portfolio</div>
+          <a class="btn" href="https://afporiginal.github.io/portfolio">explore ↗</a>
+        </div>
+      </div>
+    </div>
+  </foreignObject>
+</svg>
